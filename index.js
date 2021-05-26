@@ -13,11 +13,17 @@ var io = require("socket.io")(server, {
 //middlewre
 app.use(express.json());
 var clients = {};
+let clientActive = [];
 
 io.on("connection", (socket) => {
   console.log(socket.id, "has joined");
   socket.on("signin", (id) => {
     clients[id] = socket;
+    clientActive.push({
+      id: id,
+      socketId: socket.id
+    });
+    socket.broadcast.emit('clientActive', clientActive);
   });
 
   socket.on("message", (msg) => {
@@ -28,7 +34,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log('client disconnect...', socket)
+    // console.log('client disconnect...', socket);
+    let filtered = clientActive.filter(function (value, index, arr) {
+      return value.socketId != socket.id;
+    });
+    socket.broadcast.emit('clientActive', filtered);
   })
 });
 
